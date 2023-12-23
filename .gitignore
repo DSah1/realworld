@@ -28,4 +28,4 @@
 
 # Go workspace file
 go.work
-/vcs.xml
+.idea
