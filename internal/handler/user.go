@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"awesomeProject/internal/handler/request"
-	"awesomeProject/internal/handler/response"
 	"awesomeProject/internal/model"
+	"awesomeProject/internal/request"
+	"awesomeProject/internal/response"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
