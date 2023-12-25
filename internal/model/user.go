@@ -29,12 +29,18 @@ func (Follow) TableName() string {
 	return "follows"
 }
 
-func (u *User) HashPassword(plainPassword string) (string, error) {
+func (u *User) HashPassword(plainPassword string) error {
 	if len(plainPassword) == 0 {
-		return "", errors.New("password should not be empty")
+		u.Password = ""
+		return errors.New("password should not be empty")
 	}
 	h, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
-	return string(h), err
+	if err != nil {
+		return err
+	}
+
+	u.Password = string(h)
+	return nil
 }
 
 func (u *User) CheckPassword(plainPassword string) bool {

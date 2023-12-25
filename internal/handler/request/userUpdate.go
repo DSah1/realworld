@@ -33,13 +33,6 @@ func (r *UserUpdateRequest) Bind(c *fiber.Ctx, u *model.User) error {
 	}
 	u.Username = r.User.Username
 	u.Email = r.User.Email
-	if r.User.Password != u.Password {
-		h, err := u.HashPassword(r.User.Password)
-		if err != nil {
-			return err
-		}
-		u.Password = h
-	}
 	u.Bio = &r.User.Bio
 	u.Image = &r.User.Image
 	return nil

@@ -20,10 +20,6 @@ func (r *UserRegisterRequest) Bind(c *fiber.Ctx, u *model.User) error {
 
 	u.Username = r.User.Username
 	u.Email = r.User.Email
-	h, err := u.HashPassword(r.User.Password)
-	if err != nil {
-		return err
-	}
-	u.Password = h
+
 	return nil
 }

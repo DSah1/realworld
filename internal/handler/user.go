@@ -21,6 +21,11 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnprocessableEntity).SendString(err.Error())
 	}
 
+	err := user.HashPassword(req.User.Password)
+	if err != nil {
+		return err
+	}
+
 	if err := h.userStore.Create(&user); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).SendString(err.Error())
 	}
@@ -72,6 +77,12 @@ func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 
 	if err := req.Bind(c, user); err != nil {
 		return c.SendStatus(http.StatusUnprocessableEntity)
+	}
+	if req.User.Password != user.Password {
+		err := user.HashPassword(req.User.Password)
+		if err != nil {
+			return err
+		}
 	}
 
 	return c.Status(http.StatusOK).JSON(response.NewUserResponse(user))
