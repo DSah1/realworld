@@ -1,7 +1,7 @@
 package store
 
 import (
-	"awesomeProject/model"
+	"awesomeProject/internal/model"
 	"errors"
 	"gorm.io/gorm"
 )

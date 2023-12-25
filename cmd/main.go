@@ -2,9 +2,9 @@ package main
 
 import (
 	"awesomeProject/db"
-	"awesomeProject/handler"
-	"awesomeProject/router"
-	"awesomeProject/store"
+	"awesomeProject/internal/handler"
+	"awesomeProject/internal/router"
+	"awesomeProject/internal/store"
 	"log"
 )
 

@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"awesomeProject/handler/request"
-	"awesomeProject/handler/response"
-	"awesomeProject/model"
+	"awesomeProject/internal/handler/request"
+	"awesomeProject/internal/handler/response"
+	"awesomeProject/internal/model"
 	"awesomeProject/utils"
 	"github.com/gofiber/fiber/v2"
 	"net/http"

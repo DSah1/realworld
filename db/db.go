@@ -1,7 +1,7 @@
 package db
 
 import (
-	"awesomeProject/model"
+	"awesomeProject/internal/model"
 	"fmt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

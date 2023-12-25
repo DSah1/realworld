@@ -1,7 +1,7 @@
 package request
 
 import (
-	"awesomeProject/model"
+	"awesomeProject/internal/model"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gosimple/slug"
 )

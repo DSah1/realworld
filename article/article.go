@@ -1,6 +1,6 @@
 package article
 
-import "awesomeProject/model"
+import "awesomeProject/internal/model"
 
 type Store interface {
 	List(limit, offset int) ([]model.Article, error)

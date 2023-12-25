@@ -1,8 +1,8 @@
 package response
 
 import (
-	"awesomeProject/model"
-	"awesomeProject/user"
+	"awesomeProject/internal/model"
+	"awesomeProject/internal/user"
 )
 
 type ProfileResponse struct {

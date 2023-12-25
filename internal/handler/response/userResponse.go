@@ -1,7 +1,7 @@
 package response
 
 import (
-	"awesomeProject/model"
+	"awesomeProject/internal/model"
 	"awesomeProject/utils"
 )
 

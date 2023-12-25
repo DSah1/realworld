@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"awesomeProject/handler/response"
+	"awesomeProject/internal/handler/response"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 )

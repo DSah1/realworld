@@ -1,6 +1,6 @@
 package user
 
-import "awesomeProject/model"
+import "awesomeProject/internal/model"
 
 type Store interface {
 	GetByID(uint) (*model.User, error)

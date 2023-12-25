@@ -2,7 +2,7 @@ package handler
 
 import (
 	"awesomeProject/article"
-	"awesomeProject/user"
+	"awesomeProject/internal/user"
 )
 
 type Handler struct {

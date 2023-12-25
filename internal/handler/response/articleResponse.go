@@ -2,8 +2,8 @@ package response
 
 import (
 	"awesomeProject/article"
-	"awesomeProject/model"
-	"awesomeProject/user"
+	"awesomeProject/internal/model"
+	"awesomeProject/internal/user"
 	"time"
 )
 
