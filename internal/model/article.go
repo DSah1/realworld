@@ -31,7 +31,7 @@ type Tag struct {
 }
 
 func (a *Article) ExtractTags() []string {
-	var extractedTags []string
+	extractedTags := make([]string, len(a.Tags))
 	for _, tag := range a.Tags {
 		extractedTags = append(extractedTags, tag.Tag)
 	}

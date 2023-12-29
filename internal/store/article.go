@@ -16,7 +16,15 @@ func NewArticleStore(db *gorm.DB) *ArticleStore {
 
 func (as *ArticleStore) List(limit, offset int) ([]model.Article, error) {
 	var articles []model.Article
-	err := as.db.Limit(limit).Offset(offset).Find(&articles).Error
+	err := as.db.
+		Preload("Tags").
+		Preload("Favorites").
+		Limit(limit).
+		Offset(offset).
+		Order("created_at desc").
+		Find(&articles).
+		Error
+
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +75,7 @@ func (as *ArticleStore) Update(a *model.Article) error {
 }
 
 func (as *ArticleStore) Delete(a *model.Article) error {
-	return as.db.Delete(&a).Error
+	return as.db.Unscoped().Delete(&a).Error
 }
 
 func (as *ArticleStore) GetBySlug(slug string) (*model.Article, error) {
@@ -75,7 +83,7 @@ func (as *ArticleStore) GetBySlug(slug string) (*model.Article, error) {
 
 	if err := as.db.Where("slug = ?", slug).First(&article).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, err
 		}
 		return nil, err
 	}
