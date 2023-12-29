@@ -1,7 +1,7 @@
 package response
 
 import (
-	"awesomeProject/article"
+	"awesomeProject/internal/article"
 	"awesomeProject/internal/model"
 	"awesomeProject/internal/user"
 	"awesomeProject/utils"
@@ -64,7 +64,7 @@ func assignToArticle(article model.Article, as article.Store, us user.Store, use
 	resArticle.TagList = article.ExtractTags()
 	resArticle.CreatedAt = article.CreatedAt.Format(utils.ISO8601)
 	resArticle.UpdatedAt = article.UpdatedAt.Format(utils.ISO8601)
-	resArticle.Favorited, _ = as.IsUserInFavorites(article.ID, userID)
+	resArticle.Favorited = as.IsUserInFavorites(article.ID, userID)
 	resArticle.FavoritesCount = len(article.Favorites)
 	resArticle.Author = NewProfileResponse(&article.Author, us, userID)
 

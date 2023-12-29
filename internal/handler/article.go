@@ -118,9 +118,6 @@ func (h *Handler) DeleteArticle(c *fiber.Ctx) error {
 	userID := getUserIDByToken(c)
 
 	article, err := h.articleStore.GetBySlug(slug)
-	//if article == nil {
-	//	return c.Status(http.StatusNotFound).SendString("Article not found")
-	//}
 
 	if err != nil {
 		return err
@@ -131,6 +128,44 @@ func (h *Handler) DeleteArticle(c *fiber.Ctx) error {
 	}
 
 	if err := h.articleStore.Delete(article); err != nil {
+		return err
+	}
+
+	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+}
+
+func (h *Handler) FavoriteArticle(c *fiber.Ctx) error {
+	userID := getUserIDByToken(c)
+	article, err := h.articleStore.GetBySlug(c.Params("slug"))
+
+	if err != nil {
+		return err
+	}
+
+	if h.articleStore.IsUserInFavorites(article.ID, userID) {
+		return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+	}
+
+	if err := h.articleStore.AddFavorite(article, userID); err != nil {
+		return err
+	}
+
+	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+}
+
+func (h *Handler) UnfavoriteArticle(c *fiber.Ctx) error {
+	userID := getUserIDByToken(c)
+	article, err := h.articleStore.GetBySlug(c.Params("slug"))
+
+	if err != nil {
+		return err
+	}
+
+	if !h.articleStore.IsUserInFavorites(article.ID, userID) {
+		return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+	}
+
+	if err := h.articleStore.RemoveFavorite(article, userID); err != nil {
 		return err
 	}
 
