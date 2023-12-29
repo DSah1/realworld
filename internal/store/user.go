@@ -39,7 +39,7 @@ func (us *UserStore) GetByEmail(email string) (*model.User, error) {
 	var user model.User
 	if err := us.db.Where("email = ?", email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, err
 		}
 		return nil, err
 	}

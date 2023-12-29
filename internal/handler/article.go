@@ -1,11 +1,13 @@
 package handler
 
 import (
-	"awesomeProject/internal/handler/request"
-	"awesomeProject/internal/handler/response"
 	"awesomeProject/internal/model"
+	"awesomeProject/internal/request"
+	"awesomeProject/internal/response"
 	"awesomeProject/utils"
+	"errors"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -47,6 +49,9 @@ func (h *Handler) CreateArticle(c *fiber.Ctx) error {
 	req := new(request.CreateArticleRequest)
 	err = req.Bind(c, &article, user)
 	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return c.Status(http.StatusBadRequest).SendString("Duplicate Key")
+		}
 		return err
 	}
 
@@ -67,6 +72,9 @@ func (h *Handler) GetArticle(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if article == nil {
+		return c.Status(http.StatusNotFound).SendString("Article not found")
+	}
 
 	res := response.NewArticleResponse(article, h.articleStore, h.userStore, userID)
 
@@ -79,12 +87,16 @@ func (h *Handler) UpdateArticle(c *fiber.Ctx) error {
 
 	article, err := h.articleStore.GetBySlug(slug)
 
+	if article == nil {
+		return c.Status(http.StatusNotFound).SendString("Article not found")
+	}
+
 	if err != nil {
 		return err
 	}
 
 	if userID != article.AuthorID {
-		return c.SendStatus(http.StatusUnauthorized)
+		return c.Status(http.StatusUnauthorized).SendString("You are not authorized to update this article, not author.")
 	}
 
 	r := request.UpdateArticleRequest{}
@@ -106,6 +118,9 @@ func (h *Handler) DeleteArticle(c *fiber.Ctx) error {
 	userID := getUserIDByToken(c)
 
 	article, err := h.articleStore.GetBySlug(slug)
+	//if article == nil {
+	//	return c.Status(http.StatusNotFound).SendString("Article not found")
+	//}
 
 	if err != nil {
 		return err

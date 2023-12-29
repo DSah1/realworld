@@ -4,7 +4,7 @@ import (
 	"awesomeProject/article"
 	"awesomeProject/internal/model"
 	"awesomeProject/internal/user"
-	"time"
+	"awesomeProject/utils"
 )
 
 type Article struct {
@@ -13,8 +13,8 @@ type Article struct {
 	Description    string           `json:"description"`
 	Body           string           `json:"body"`
 	TagList        []string         `json:"tagList"`
-	CreatedAt      time.Time        `json:"createdAt"`
-	UpdatedAt      time.Time        `json:"updatedAt"`
+	CreatedAt      string           `json:"createdAt"`
+	UpdatedAt      string           `json:"updatedAt"`
 	Favorited      bool             `json:"favorited"`
 	FavoritesCount int              `json:"favoritesCount"`
 	Author         *ProfileResponse `json:"author"`
@@ -62,8 +62,8 @@ func assignToArticle(article model.Article, as article.Store, us user.Store, use
 	resArticle.Description = article.Description
 	resArticle.Body = article.Body
 	resArticle.TagList = article.ExtractTags()
-	resArticle.CreatedAt = article.CreatedAt
-	resArticle.UpdatedAt = article.UpdatedAt
+	resArticle.CreatedAt = article.CreatedAt.Format(utils.ISO8601)
+	resArticle.UpdatedAt = article.UpdatedAt.Format(utils.ISO8601)
 	resArticle.Favorited, _ = as.IsUserInFavorites(article.ID, userID)
 	resArticle.FavoritesCount = len(article.Favorites)
 	resArticle.Author = NewProfileResponse(&article.Author, us, userID)
