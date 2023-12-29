@@ -14,21 +14,19 @@ import (
 
 const (
 	TEST_DB_URL     = "./../database/realworld_test.db"
-	DB_URL          = "./database/realworld.db"
+	SQLITE_DB_URL   = "./database/realworld.db"
 	POSTGRES_DB_URL = "host=localhost user=postgres password=dor4420 dbname=gorm port=5432 sslmode=disable TimeZone=Asia/Jerusalem"
 	IS_POSTGRES     = false
 )
 
-func dialector(dsn string) gorm.Dialector {
+func getDialector() gorm.Dialector {
 	if IS_POSTGRES {
-		return postgres.Open(dsn)
+		return postgres.Open(POSTGRES_DB_URL)
 	}
-	return sqlite.Open(dsn)
+	return sqlite.Open(SQLITE_DB_URL)
 }
 
 func New() *gorm.DB {
-	dsn := DB_URL
-
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags),
 		logger.Config{
@@ -38,7 +36,7 @@ func New() *gorm.DB {
 			Colorful:                  true,                  // Disable color
 		},
 	)
-	db, err := gorm.Open(dialector(dsn), &gorm.Config{
+	db, err := gorm.Open(getDialector(), &gorm.Config{
 		Logger: newLogger,
 	})
 
