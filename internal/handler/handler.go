@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"awesomeProject/article"
+	"awesomeProject/internal/article"
 	"awesomeProject/internal/user"
 )
 

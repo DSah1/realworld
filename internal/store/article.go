@@ -65,19 +65,19 @@ func (as *ArticleStore) ListByAuthor(limit, offset int, author model.User) ([]mo
 	return articles, nil
 }
 
-func (as *ArticleStore) IsUserInFavorites(articleID uint, userID uint) (bool, error) {
+func (as *ArticleStore) IsUserInFavorites(articleID uint, userID uint) bool {
 	var count int64
+
 	err := as.db.Model(&model.Article{}).
-		Joins("JOIN favorites ON favorites.article.id = articles.id").
-		Where("articles.id = ?", articleID).
-		Where("favorites.user.id", userID).
+		Joins("JOIN favorites ON favorites.article_id = articles.id").
+		Where("articles.id = ? AND favorites.user_id = ?", articleID, userID).
 		Count(&count).Error
 
 	if err != nil {
-		return false, err
+		return false
 	}
 
-	return count > 0, nil
+	return count > 0
 }
 
 func (as *ArticleStore) Create(a *model.Article) error {
@@ -89,6 +89,14 @@ func (as *ArticleStore) Update(a *model.Article) error {
 }
 
 func (as *ArticleStore) Delete(a *model.Article) error {
+	if err := as.db.Model(&a).Association("Tags").Clear(); err != nil {
+		return err
+	}
+
+	if err := as.db.Model(&a).Association("Favorites").Clear(); err != nil {
+		return err
+	}
+
 	return as.db.Unscoped().Delete(&a).Error
 }
 
@@ -103,4 +111,16 @@ func (as *ArticleStore) GetBySlug(slug string) (*model.Article, error) {
 	}
 
 	return &article, nil
+}
+
+func (as *ArticleStore) AddFavorite(a *model.Article, userID uint) error {
+	usr := model.User{}
+	usr.ID = userID
+	return as.db.Model(a).Association("Favorites").Append(&usr)
+}
+
+func (as *ArticleStore) RemoveFavorite(a *model.Article, userID uint) error {
+	usr := model.User{}
+	usr.ID = userID
+	return as.db.Model(a).Association("Favorites").Delete(&usr)
 }

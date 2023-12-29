@@ -34,4 +34,7 @@ func (h *Handler) RegisterRoutes(r *fiber.App) {
 	articles.Get("/:slug", h.GetArticle)
 	articles.Put("/:slug", h.UpdateArticle)
 	articles.Delete("/:slug", h.DeleteArticle)
+
+	articles.Post("/:slug/favorite", h.FavoriteArticle)
+	articles.Delete("/:slug/favorite", h.UnfavoriteArticle)
 }
