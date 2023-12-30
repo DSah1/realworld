@@ -124,3 +124,30 @@ func (as *ArticleStore) RemoveFavorite(a *model.Article, userID uint) error {
 	usr.ID = userID
 	return as.db.Model(a).Association("Favorites").Delete(&usr)
 }
+
+func (as *ArticleStore) GetTags() []model.Tag {
+	var tags []model.Tag
+	err := as.db.Model(&model.Tag{}).Find(&tags).Error
+
+	if err != nil || tags == nil {
+		return make([]model.Tag, 0)
+	}
+	return tags
+}
+
+func (as *ArticleStore) CreateComment(comment *model.Comment) error {
+	return as.db.Create(comment).Error
+}
+
+func (as *ArticleStore) DeleteComment(comment *model.Comment) error {
+	return as.db.Unscoped().Delete(&comment).Error
+}
+
+func (as *ArticleStore) GetCommentByID(commentID uint) (*model.Comment, error) {
+	var comment model.Comment
+	err := as.db.Model(&comment).Where("id = ?", commentID).Find(&comment).Error
+	if err != nil {
+		return nil, err
+	}
+	return &comment, nil
+}

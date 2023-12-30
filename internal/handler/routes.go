@@ -37,4 +37,10 @@ func (h *Handler) RegisterRoutes(r *fiber.App) {
 
 	articles.Post("/:slug/favorite", h.FavoriteArticle)
 	articles.Delete("/:slug/favorite", h.UnfavoriteArticle)
+
+	articles.Post("/:slug/comments", h.Comment)
+	articles.Delete("/:slug/comments/:id", h.DeleteComment)
+
+	tags := v1.Group("tags")
+	tags.Get("", h.Tags)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
 func (h *Handler) ListArticles(c *fiber.Ctx) error {
@@ -170,4 +171,50 @@ func (h *Handler) UnfavoriteArticle(c *fiber.Ctx) error {
 	}
 
 	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+}
+
+func (h *Handler) Comment(c *fiber.Ctx) error {
+	userID := getUserIDByToken(c)
+	article, err := h.articleStore.GetBySlug(c.Params("slug"))
+
+	if err != nil {
+		return err
+	}
+
+	req := request.CreateCommentRequest{}
+	comment := model.Comment{}
+
+	if err := req.Bind(c, &comment, userID, article); err != nil {
+		return err
+	}
+
+	if err := h.articleStore.CreateComment(&comment); err != nil {
+		return err
+	}
+
+	return c.Status(http.StatusCreated).JSON(response.NewCommentResponse(&comment, h.userStore, userID))
+}
+
+func (h *Handler) DeleteComment(c *fiber.Ctx) error {
+	//userID := getUserIDByToken(c)
+	//article, err := h.articleStore.GetBySlug(c.Params("slug"))
+
+	//if err != nil {
+	//	return err
+	//}
+
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return err
+	}
+
+	comment, err := h.articleStore.GetCommentByID(uint(id))
+	if err != nil {
+		return err
+	}
+
+	if err := h.articleStore.DeleteComment(comment); err != nil {
+		return err
+	}
+	return c.SendStatus(http.StatusOK)
 }

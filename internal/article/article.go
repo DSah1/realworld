@@ -13,4 +13,8 @@ type Store interface {
 	GetBySlug(slug string) (*model.Article, error)
 	AddFavorite(a *model.Article, userID uint) error
 	RemoveFavorite(a *model.Article, userID uint) error
+	GetTags() []model.Tag
+	CreateComment(*model.Comment) error
+	DeleteComment(*model.Comment) error
+	GetCommentByID(commentID uint) (*model.Comment, error)
 }

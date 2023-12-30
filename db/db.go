@@ -78,7 +78,7 @@ func AutoMigrate(db *gorm.DB) {
 		&model.Follow{},
 		&model.Article{},
 		&model.Tag{},
-		//&model.Comment{},
+		&model.Comment{},
 	)
 	if err != nil {
 		return
