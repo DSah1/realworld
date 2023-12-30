@@ -10,19 +10,19 @@ type Article struct {
 	Body        string
 	Author      User
 	AuthorID    uint
-	//Comments    []Comment
-	Favorites []User `gorm:"many2many:favorites;"`
-	Tags      []Tag  `gorm:"many2many:article_tags;"`
+	Comments    []Comment
+	Favorites   []User `gorm:"many2many:favorites;"`
+	Tags        []Tag  `gorm:"many2many:article_tags;"`
 }
 
-//
-//type Comment struct {
-//	gorm.Model
-//	Article   Article
-//	ArticleID uint
-//	User      User
-//	Body      string
-//}
+type Comment struct {
+	gorm.Model
+	Article   Article
+	ArticleID uint
+	User      User
+	UserID    uint
+	Body      string
+}
 
 type Tag struct {
 	gorm.Model
