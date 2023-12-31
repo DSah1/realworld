@@ -15,11 +15,11 @@ type MultipleComments struct {
 }
 
 type Comment struct {
-	Id        uint            `json:"id"`
-	CreatedAt string          `json:"createdAt"`
-	UpdatedAt string          `json:"updatedAt"`
-	Body      string          `json:"body"`
-	Author    ProfileResponse `json:"author"`
+	Id        uint     `json:"id"`
+	CreatedAt string   `json:"createdAt"`
+	UpdatedAt string   `json:"updatedAt"`
+	Body      string   `json:"body"`
+	Author    *Profile `json:"author"`
 }
 
 func NewCommentResponse(comment *model.Comment, us user.Store, userID uint) *SingleComment {
@@ -43,7 +43,7 @@ func assignToComment(cmt *model.Comment, us user.Store, userID uint) *Comment {
 
 	resComment.Id = cmt.ID
 	resComment.Body = cmt.Body
-	resComment.Author = *NewProfileResponse(&cmt.User, us, userID)
+	resComment.Author = NewProfile(&cmt.User, us, userID)
 	resComment.CreatedAt = cmt.CreatedAt.Format(utils.ISO8601)
 	resComment.UpdatedAt = cmt.UpdatedAt.Format(utils.ISO8601)
 

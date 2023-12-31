@@ -8,16 +8,16 @@ import (
 )
 
 type Article struct {
-	Slug           string           `json:"slug"`
-	Title          string           `json:"title"`
-	Description    string           `json:"description"`
-	Body           string           `json:"body"`
-	TagList        []string         `json:"tagList"`
-	CreatedAt      string           `json:"createdAt"`
-	UpdatedAt      string           `json:"updatedAt"`
-	Favorited      bool             `json:"favorited"`
-	FavoritesCount int              `json:"favoritesCount"`
-	Author         *ProfileResponse `json:"author"`
+	Slug           string   `json:"slug"`
+	Title          string   `json:"title"`
+	Description    string   `json:"description"`
+	Body           string   `json:"body"`
+	TagList        []string `json:"tagList"`
+	CreatedAt      string   `json:"createdAt"`
+	UpdatedAt      string   `json:"updatedAt"`
+	Favorited      bool     `json:"favorited"`
+	FavoritesCount int      `json:"favoritesCount"`
+	Author         *Profile `json:"author"`
 }
 
 type SingleArticle struct {
@@ -31,6 +31,7 @@ type MultipleArticle struct {
 
 func NewMultiArticleResponse(articles []model.Article, as article.Store, us user.Store, userID uint) *MultipleArticle {
 	resArticle := new(MultipleArticle)
+	resArticle.Articles = make([]Article, len(articles))
 
 	for _, a := range articles {
 		resArticle.Articles = append(resArticle.Articles, *assignToArticle(a, as, us, userID))
@@ -66,7 +67,7 @@ func assignToArticle(article model.Article, as article.Store, us user.Store, use
 	resArticle.UpdatedAt = article.UpdatedAt.Format(utils.ISO8601)
 	resArticle.Favorited = as.IsUserInFavorites(article.ID, userID)
 	resArticle.FavoritesCount = len(article.Favorites)
-	resArticle.Author = NewProfileResponse(&article.Author, us, userID)
+	resArticle.Author = NewProfile(&article.Author, us, userID)
 
 	return resArticle
 }

@@ -32,8 +32,10 @@ type Tag struct {
 
 func (a *Article) ExtractTags() []string {
 	extractedTags := make([]string, len(a.Tags))
-	for _, tag := range a.Tags {
-		extractedTags = append(extractedTags, tag.Tag)
+
+	for i := 0; i < len(a.Tags); i++ {
+		extractedTags[i] = a.Tags[i].Tag
 	}
+
 	return extractedTags
 }

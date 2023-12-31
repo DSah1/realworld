@@ -20,7 +20,7 @@ func (us *UserStore) GetByID(id uint) (*model.User, error) {
 	var m model.User
 	if err := us.db.First(&m, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, err
 		}
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (us *UserStore) GetByUsername(username string) (*model.User, error) {
 
 	if err := us.db.Where("username = ?", username).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, err
 		}
 		return nil, err
 	}
@@ -81,4 +81,17 @@ func (us *UserStore) RemoveFollower(u *model.User, followerID uint) error {
 		return err
 	}
 	return nil
+}
+
+func (us *UserStore) GetFollows(userID uint) ([]model.User, error) {
+	var followingUsers []model.User
+	err := us.db.Model(&model.Follow{}).Where("follower_id = ?", userID).
+		Joins("JOIN users on users.id = follows.following_id").
+		Select("users.*").Find(&followingUsers).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return followingUsers, nil
 }

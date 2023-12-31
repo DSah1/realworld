@@ -22,13 +22,14 @@ func (h *Handler) RegisterRoutes(r *fiber.App) {
 	user.Get("", h.CurrentUser)
 	user.Put("", h.UpdateUser)
 
-	profile := v1.Group("/profile", jwtmidware)
+	profile := v1.Group("/profiles", jwtmidware)
 	profile.Get("/:username", h.GetProfile)
 	profile.Post("/:username/follow", h.Follow)
 	profile.Post("/:username/unfollow", h.Unfollow)
 
 	articles := v1.Group("/articles", jwtmidware)
 	articles.Get("", h.ListArticles)
+	articles.Get("/feed", h.Feed)
 
 	articles.Post("", h.CreateArticle)
 	articles.Get("/:slug", h.GetArticle)
@@ -40,6 +41,7 @@ func (h *Handler) RegisterRoutes(r *fiber.App) {
 
 	articles.Post("/:slug/comments", h.Comment)
 	articles.Delete("/:slug/comments/:id", h.DeleteComment)
+	articles.Get("/:slug/comments", h.AllComments)
 
 	tags := v1.Group("tags")
 	tags.Get("", h.Tags)
