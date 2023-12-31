@@ -19,6 +19,7 @@ func (as *ArticleStore) List(limit, offset int) ([]model.Article, error) {
 	err := as.db.
 		Preload("Tags").
 		Preload("Favorites").
+		Preload("Comments").
 		Limit(limit).
 		Offset(offset).
 		Order("created_at desc").
@@ -37,6 +38,7 @@ func (as *ArticleStore) ListByTag(limit, offset int, tag string) ([]model.Articl
 	err := as.db.
 		Preload("Tags", "tag = ?", tag).
 		Preload("Favorites").
+		Preload("Comments").
 		Limit(limit).
 		Offset(offset).
 		Order("created_at desc").
@@ -63,6 +65,24 @@ func (as *ArticleStore) ListByAuthor(limit, offset int, author model.User) ([]mo
 		return nil, err
 	}
 	return articles, nil
+}
+
+func (as *ArticleStore) Feed(limit, offset int, userID uint) ([]model.Article, error) {
+	var feed []model.Article
+
+	if err := as.db.Model(&model.Article{}).Preload("Tags").Preload("Favorites").
+		Joins("JOIN users on users.id = articles.author_id").
+		Joins("JOIN follows on follows.following_id = users.id").
+		Where("follows.follower_id = ?", userID).Order("articles.created_at DESC").
+		Limit(limit).Offset(offset).
+		Find(&feed).Error; err != nil {
+		return nil, err
+	}
+	if len(feed) == 0 {
+		feed = make([]model.Article, 0)
+	}
+
+	return feed, nil
 }
 
 func (as *ArticleStore) IsUserInFavorites(articleID uint, userID uint) bool {
@@ -103,7 +123,12 @@ func (as *ArticleStore) Delete(a *model.Article) error {
 func (as *ArticleStore) GetBySlug(slug string) (*model.Article, error) {
 	var article model.Article
 
-	if err := as.db.Where("slug = ?", slug).First(&article).Error; err != nil {
+	if err := as.db.
+		Where(&model.Article{Slug: slug}).Preload("Favorites").
+		Preload("Tags", func(db *gorm.DB) *gorm.DB {
+			return db.Order("tag asc")
+		}).
+		Preload("Author").First(&article).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}
@@ -150,4 +175,14 @@ func (as *ArticleStore) GetCommentByID(commentID uint) (*model.Comment, error) {
 		return nil, err
 	}
 	return &comment, nil
+}
+
+func (as *ArticleStore) GetCommentsForArticle(s string) ([]model.Comment, error) {
+	var comments []model.Comment
+
+	err := as.db.Model(comments).Preload("User").Where(model.Comment{Article: model.Article{Slug: s}}).Find(&comments).Error
+	if err != nil {
+		return make([]model.Comment, 0), err
+	}
+	return comments, nil
 }

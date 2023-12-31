@@ -41,9 +41,27 @@ func (h *Handler) ListArticles(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(response.NewMultiArticleResponse(articles, h.articleStore, h.userStore, userID))
 }
 
+func (h *Handler) Feed(c *fiber.Ctx) error {
+	userID := getUserIDByToken(c)
+	query := c.Queries()
+
+	limit := utils.IntFromQuery(query, "limit", 20)
+	offset := utils.IntFromQuery(query, "offset", 0)
+
+	feed, err := h.articleStore.Feed(limit, offset, userID)
+	if err != nil {
+		return err
+	}
+	return c.Status(http.StatusOK).JSON(response.NewMultiArticleResponse(feed, h.articleStore, h.userStore, userID))
+}
+
 func (h *Handler) CreateArticle(c *fiber.Ctx) error {
 	userID := getUserIDByToken(c)
 	user, err := h.userStore.GetByID(userID)
+
+	if err != nil {
+		return err
+	}
 
 	var article model.Article
 
@@ -196,12 +214,12 @@ func (h *Handler) Comment(c *fiber.Ctx) error {
 }
 
 func (h *Handler) DeleteComment(c *fiber.Ctx) error {
-	//userID := getUserIDByToken(c)
-	//article, err := h.articleStore.GetBySlug(c.Params("slug"))
+	userID := getUserIDByToken(c)
+	article, err := h.articleStore.GetBySlug(c.Params("slug"))
 
-	//if err != nil {
-	//	return err
-	//}
+	if err != nil {
+		return err
+	}
 
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -209,6 +227,15 @@ func (h *Handler) DeleteComment(c *fiber.Ctx) error {
 	}
 
 	comment, err := h.articleStore.GetCommentByID(uint(id))
+
+	if comment.UserID != userID {
+		return c.Status(http.StatusForbidden).SendString("You cannot delete comments that were not made by you")
+	}
+
+	if comment.ArticleID != article.ID {
+		return c.Status(http.StatusForbidden).SendString("This comment is not related to slug")
+	}
+
 	if err != nil {
 		return err
 	}
@@ -217,4 +244,15 @@ func (h *Handler) DeleteComment(c *fiber.Ctx) error {
 		return err
 	}
 	return c.SendStatus(http.StatusOK)
+}
+
+func (h *Handler) AllComments(c *fiber.Ctx) error {
+	userID := getUserIDByToken(c)
+	comments, err := h.articleStore.GetCommentsForArticle(c.Params("slug"))
+
+	if err != nil {
+		return err
+	}
+
+	return c.Status(http.StatusOK).JSON(response.NewMultipleCommentResponse(comments, h.userStore, userID))
 }

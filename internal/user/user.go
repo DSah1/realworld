@@ -12,4 +12,5 @@ type Store interface {
 	IsFollower(uint, uint) (bool, error)
 	AddFollower(*model.User, uint) error
 	RemoveFollower(*model.User, uint) error
+	GetFollows(userID uint) ([]model.User, error)
 }
