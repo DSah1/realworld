@@ -14,6 +14,22 @@ func (h *Handler) RegisterRoutes(r *fiber.App) {
 		AuthScheme: "Token",
 	})
 
+	articlesJwtmidware := jwtware.New(jwtware.Config{
+		SigningKey: utils.SecretString,
+		AuthScheme: "Token",
+		Filter: func(c *fiber.Ctx) bool {
+			return c.Path() != "/api/articles/feed" && c.Method() == fiber.MethodGet
+		},
+	})
+
+	profilesJwtmidware := jwtware.New(jwtware.Config{
+		SigningKey: utils.SecretString,
+		AuthScheme: "Token",
+		Filter: func(c *fiber.Ctx) bool {
+			return c.Method() == fiber.MethodGet
+		},
+	})
+
 	guestUsers := v1.Group("/users")
 	guestUsers.Post("", h.Register)
 	guestUsers.Post("/login", h.Login)
@@ -22,12 +38,12 @@ func (h *Handler) RegisterRoutes(r *fiber.App) {
 	user.Get("", h.CurrentUser)
 	user.Put("", h.UpdateUser)
 
-	profile := v1.Group("/profiles", jwtmidware)
+	profile := v1.Group("/profiles", profilesJwtmidware)
 	profile.Get("/:username", h.GetProfile)
 	profile.Post("/:username/follow", h.Follow)
 	profile.Post("/:username/unfollow", h.Unfollow)
 
-	articles := v1.Group("/articles", jwtmidware)
+	articles := v1.Group("/articles", articlesJwtmidware)
 	articles.Get("", h.ListArticles)
 	articles.Get("/feed", h.Feed)
 

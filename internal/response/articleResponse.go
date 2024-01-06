@@ -33,8 +33,8 @@ func NewMultiArticleResponse(articles []model.Article, as article.Store, us user
 	resArticle := new(MultipleArticle)
 	resArticle.Articles = make([]Article, len(articles))
 
-	for _, a := range articles {
-		resArticle.Articles = append(resArticle.Articles, *assignToArticle(a, as, us, userID))
+	for i, a := range articles {
+		resArticle.Articles[i] = *assignToArticle(a, as, us, userID)
 		resArticle.ArticlesCount++
 	}
 
