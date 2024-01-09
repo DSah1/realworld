@@ -15,25 +15,36 @@ type UserUpdateRequest struct {
 	} `json:"user"`
 }
 
-func (r *UserUpdateRequest) Populate(u *model.User) {
-	r.User.Username = u.Username
-	r.User.Email = u.Email
-	r.User.Password = u.Password
-	if u.Bio != nil {
-		r.User.Bio = *u.Bio
-	}
-	if u.Image != nil {
-		r.User.Image = *u.Image
-	}
-}
-
-func (r *UserUpdateRequest) Bind(c *fiber.Ctx, u *model.User) error {
+func (r *UserUpdateRequest) ParseUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(r); err != nil {
 		return err
 	}
-	u.Username = r.User.Username
-	u.Email = r.User.Email
-	u.Bio = &r.User.Bio
-	u.Image = &r.User.Image
 	return nil
+}
+
+func (r *UserUpdateRequest) Bind(u *model.User) error {
+	updateIfNotEmpty(&u.Username, r.User.Username)
+	updateIfNotEmpty(&u.Email, r.User.Email)
+
+	if r.User.Bio != "" {
+		u.Bio = &r.User.Bio
+	}
+
+	if r.User.Image != "" {
+		u.Image = &r.User.Image
+	}
+
+	if r.User.Password != "" {
+		if err := u.HashPassword(r.User.Password); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func updateIfNotEmpty(current *string, newValue string) {
+	if newValue != "" {
+		*current = newValue
+	}
 }

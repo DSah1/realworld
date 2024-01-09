@@ -1,6 +1,10 @@
 package user
 
-import "awesomeProject/internal/model"
+import (
+	"awesomeProject/internal/model"
+	"awesomeProject/internal/request"
+	"awesomeProject/internal/response"
+)
 
 type Store interface {
 	GetByID(uint) (*model.User, error)
@@ -13,4 +17,11 @@ type Store interface {
 	AddFollower(*model.User, uint) error
 	RemoveFollower(*model.User, uint) error
 	GetFollows(userID uint) ([]model.User, error)
+}
+
+type Service interface {
+	Registration(*request.UserRegisterRequest) (*response.UserResponse, error)
+	Login(*request.UserLoginRequest) (*response.UserResponse, error)
+	CurrentUser(uint) (*response.UserResponse, error)
+	UpdateUser(uint, *request.UserUpdateRequest) (*response.UserResponse, error)
 }

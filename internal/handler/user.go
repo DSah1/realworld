@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"awesomeProject/internal/model"
 	"awesomeProject/internal/request"
-	"awesomeProject/internal/response"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
@@ -12,25 +10,18 @@ import (
 
 func (h *Handler) Register(c *fiber.Ctx) error {
 
-	var user model.User
-
 	req := request.UserRegisterRequest{}
 
-	if err := req.Bind(c, &user); err != nil {
+	if err := req.Bind(c); err != nil {
 		fmt.Println(err)
 		return c.Status(fiber.StatusUnprocessableEntity).SendString(err.Error())
 	}
-
-	err := user.HashPassword(req.User.Password)
+	userResponse, err := h.userService.Registration(&req)
 	if err != nil {
-		return err
+		return c.Status(http.StatusBadRequest).SendString(err.Error())
 	}
 
-	if err := h.userStore.Create(&user); err != nil {
-		return c.Status(http.StatusUnprocessableEntity).SendString(err.Error())
-	}
-
-	return c.Status(http.StatusCreated).JSON(response.NewUserResponse(&user))
+	return c.Status(http.StatusCreated).JSON(userResponse)
 }
 
 func (h *Handler) Login(c *fiber.Ctx) error {
@@ -43,49 +34,37 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		return err
 	}
 
-	foundUser, err := h.userStore.GetByEmail(req.User.Email)
+	userResponse, err := h.userService.Login(&req)
 
 	if err != nil {
 		return err
 	}
 
-	if !foundUser.CheckPassword(req.User.Password) {
-		return c.Status(http.StatusUnauthorized).SendString("Bad email or password")
-	}
-	return c.Status(http.StatusAccepted).JSON(response.NewUserResponse(foundUser))
+	return c.Status(http.StatusAccepted).JSON(userResponse)
 }
 
 func (h *Handler) CurrentUser(c *fiber.Ctx) error {
-	user, err := h.userStore.GetByID(getUserIDByToken(c))
+	userResponse, err := h.userService.CurrentUser(getUserIDByToken(c))
 	if err != nil {
 		return err
 	}
 
-	return c.Status(http.StatusOK).JSON(response.NewUserResponse(user))
+	return c.Status(http.StatusOK).JSON(userResponse)
 }
 
 func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 
-	user, err := h.userStore.GetByID(getUserIDByToken(c))
+	req := request.UserUpdateRequest{}
+	if err := req.ParseUser(c); err != nil {
+		return c.SendStatus(http.StatusUnprocessableEntity)
+	}
+	userResponse, err := h.userService.UpdateUser(getUserIDByToken(c), &req)
 
 	if err != nil {
 		return err
 	}
-	req := request.UserUpdateRequest{}
 
-	req.Populate(user)
-
-	if err := req.Bind(c, user); err != nil {
-		return c.SendStatus(http.StatusUnprocessableEntity)
-	}
-	if req.User.Password != user.Password {
-		err := user.HashPassword(req.User.Password)
-		if err != nil {
-			return err
-		}
-	}
-
-	return c.Status(http.StatusOK).JSON(response.NewUserResponse(user))
+	return c.Status(http.StatusOK).JSON(userResponse)
 }
 
 func getUserIDByToken(c *fiber.Ctx) uint {

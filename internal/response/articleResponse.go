@@ -1,9 +1,7 @@
 package response
 
 import (
-	"awesomeProject/internal/article"
 	"awesomeProject/internal/model"
-	"awesomeProject/internal/user"
 	"awesomeProject/utils"
 )
 
@@ -29,34 +27,28 @@ type MultipleArticle struct {
 	ArticlesCount int       `json:"articlesCount"`
 }
 
-func NewMultiArticleResponse(articles []model.Article, as article.Store, us user.Store, userID uint) *MultipleArticle {
+func NewMultiArticleResponse(articles []model.Article, isFollowers, inFavorites []bool) *MultipleArticle {
 	resArticle := new(MultipleArticle)
 	resArticle.Articles = make([]Article, len(articles))
 
 	for i, a := range articles {
-		resArticle.Articles[i] = *assignToArticle(a, as, us, userID)
+		resArticle.Articles[i] = *assignToArticle(&a, isFollowers[i], inFavorites[i])
 		resArticle.ArticlesCount++
 	}
 
 	return resArticle
 }
 
-func NewArticleResponse(article *model.Article, as article.Store, us user.Store, userID uint) *SingleArticle {
+func NewArticleResponse(article *model.Article, isFollower, inFavorite bool) *SingleArticle {
 	resArticle := new(SingleArticle)
 
-	resArticle.Article = assignToArticle(*article, as, us, userID)
+	resArticle.Article = assignToArticle(article, isFollower, inFavorite)
 
 	return resArticle
 }
 
-func assignToArticle(article model.Article, as article.Store, us user.Store, userID uint) *Article {
+func assignToArticle(article *model.Article, isFollower, inFavorite bool) *Article {
 	resArticle := new(Article)
-
-	author, err := us.GetByID(article.AuthorID)
-	if err != nil {
-		return nil
-	}
-	article.Author = *author
 
 	resArticle.Slug = article.Slug
 	resArticle.Title = article.Title
@@ -65,9 +57,9 @@ func assignToArticle(article model.Article, as article.Store, us user.Store, use
 	resArticle.TagList = article.ExtractTags()
 	resArticle.CreatedAt = article.CreatedAt.Format(utils.ISO8601)
 	resArticle.UpdatedAt = article.UpdatedAt.Format(utils.ISO8601)
-	resArticle.Favorited = as.IsUserInFavorites(article.ID, userID)
+	resArticle.Favorited = inFavorite
 	resArticle.FavoritesCount = len(article.Favorites)
-	resArticle.Author = NewProfile(&article.Author, us, userID)
+	resArticle.Author = NewProfile(&article.Author, isFollower)
 
 	return resArticle
 }

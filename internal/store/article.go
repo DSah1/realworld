@@ -50,13 +50,13 @@ func (as *ArticleStore) ListByTag(limit, offset int, tag string) ([]model.Articl
 	return articles, nil
 }
 
-func (as *ArticleStore) ListByAuthor(limit, offset int, author model.User) ([]model.Article, error) {
+func (as *ArticleStore) ListByAuthor(limit, offset int, author string) ([]model.Article, error) {
 	var articles []model.Article
 
 	err := as.db.
 		Preload("Tags").
 		Preload("Favorites").
-		Where("author = ?", author).
+		Where("author.username = ?", author).
 		Limit(limit).
 		Offset(offset).
 		Order("created_at desc").

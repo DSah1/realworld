@@ -23,22 +23,11 @@ func (h *Handler) ListArticles(c *fiber.Ctx) error {
 	limit := utils.IntFromQuery(query, "limit", 20)
 	offset := utils.IntFromQuery(query, "offset", 0)
 
-	if tag != "" {
-		articles, err := h.articleStore.ListByTag(limit, offset, tag)
-		if err != nil {
-			return err
-		}
-		articleResponse := response.NewMultiArticleResponse(articles, h.articleStore, h.userStore, userID)
-		//TODO: NOT IMPLEMENTED
-		return c.Status(http.StatusOK).JSON(articleResponse)
-	}
-
-	articles, err := h.articleStore.List(limit, offset)
+	resp, err := h.articleService.ListArticles(tag, "", "", limit, offset, userID)
 	if err != nil {
 		return err
 	}
-
-	return c.Status(http.StatusOK).JSON(response.NewMultiArticleResponse(articles, h.articleStore, h.userStore, userID))
+	return c.Status(http.StatusOK).JSON(resp)
 }
 
 func (h *Handler) Feed(c *fiber.Ctx) error {
@@ -48,88 +37,62 @@ func (h *Handler) Feed(c *fiber.Ctx) error {
 	limit := utils.IntFromQuery(query, "limit", 20)
 	offset := utils.IntFromQuery(query, "offset", 0)
 
-	feed, err := h.articleStore.Feed(limit, offset, userID)
+	resp, err := h.articleService.GetFeed(limit, offset, userID)
+
 	if err != nil {
 		return err
 	}
-	return c.Status(http.StatusOK).JSON(response.NewMultiArticleResponse(feed, h.articleStore, h.userStore, userID))
+	return c.Status(http.StatusOK).JSON(resp)
 }
 
 func (h *Handler) CreateArticle(c *fiber.Ctx) error {
 	userID := getUserIDByToken(c)
-	user, err := h.userStore.GetByID(userID)
-
-	if err != nil {
-		return err
-	}
-
-	var article model.Article
-
 	req := new(request.CreateArticleRequest)
-	err = req.Bind(c, &article, user)
-	if err != nil {
+
+	if err := req.ParseArticle(c); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return c.Status(http.StatusBadRequest).SendString("Duplicate Key")
 		}
 		return err
 	}
 
-	err = h.articleStore.Create(&article)
+	resp, err := h.articleService.CreateArticle(req, userID)
 	if err != nil {
 		return err
 	}
 
-	return c.Status(http.StatusCreated).JSON(response.NewArticleResponse(&article, h.articleStore, h.userStore, userID))
+	return c.Status(http.StatusCreated).JSON(resp)
 }
 
 func (h *Handler) GetArticle(c *fiber.Ctx) error {
 	slug := c.Params("slug")
 	userID := getUserIDByToken(c)
 
-	article, err := h.articleStore.GetBySlug(slug)
+	resp, err := h.articleService.GetArticle(slug, userID)
 
 	if err != nil {
 		return err
 	}
-	if article == nil {
-		return c.Status(http.StatusNotFound).SendString("Article not found")
-	}
 
-	res := response.NewArticleResponse(article, h.articleStore, h.userStore, userID)
-
-	return c.Status(http.StatusOK).JSON(res)
+	return c.Status(http.StatusOK).JSON(resp)
 }
 
 func (h *Handler) UpdateArticle(c *fiber.Ctx) error {
 	slug := c.Params("slug")
 	userID := getUserIDByToken(c)
 
-	article, err := h.articleStore.GetBySlug(slug)
+	req := request.UpdateArticleRequest{}
 
-	if article == nil {
-		return c.Status(http.StatusNotFound).SendString("Article not found")
+	if err := req.ParseArticle(c); err != nil {
+		return err
 	}
 
+	resp, err := h.articleService.UpdateArticle(slug, userID, &req)
 	if err != nil {
 		return err
 	}
 
-	if userID != article.AuthorID {
-		return c.Status(http.StatusUnauthorized).SendString("You are not authorized to update this article, not author.")
-	}
-
-	r := request.UpdateArticleRequest{}
-	r.Populate(article)
-
-	if err := r.Bind(c, article); err != nil {
-		return err
-	}
-
-	if err := h.articleStore.Update(article); err != nil {
-		return err
-	}
-
-	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+	return c.Status(http.StatusOK).JSON(resp)
 }
 
 func (h *Handler) DeleteArticle(c *fiber.Ctx) error {
@@ -150,7 +113,14 @@ func (h *Handler) DeleteArticle(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+	isFollower, err := h.userStore.IsFollower(article.AuthorID, userID)
+	if err != nil {
+		return err
+	}
+
+	inFavorites := h.articleStore.IsUserInFavorites(article.ID, userID)
+
+	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, inFavorites))
 }
 
 func (h *Handler) FavoriteArticle(c *fiber.Ctx) error {
@@ -160,16 +130,20 @@ func (h *Handler) FavoriteArticle(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	isFollower, err := h.userStore.IsFollower(article.AuthorID, userID)
+	if err != nil {
+		return err
+	}
 
 	if h.articleStore.IsUserInFavorites(article.ID, userID) {
-		return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+		return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, true))
 	}
 
 	if err := h.articleStore.AddFavorite(article, userID); err != nil {
 		return err
 	}
 
-	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, true))
 }
 
 func (h *Handler) UnfavoriteArticle(c *fiber.Ctx) error {
@@ -179,16 +153,20 @@ func (h *Handler) UnfavoriteArticle(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	isFollower, err := h.userStore.IsFollower(article.AuthorID, userID)
+	if err != nil {
+		return err
+	}
 
 	if !h.articleStore.IsUserInFavorites(article.ID, userID) {
-		return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+		return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, false))
 	}
 
 	if err := h.articleStore.RemoveFavorite(article, userID); err != nil {
 		return err
 	}
 
-	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, h.articleStore, h.userStore, userID))
+	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, false))
 }
 
 func (h *Handler) Comment(c *fiber.Ctx) error {
@@ -210,7 +188,12 @@ func (h *Handler) Comment(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.Status(http.StatusCreated).JSON(response.NewCommentResponse(&comment, h.userStore, userID))
+	isFollow, err := h.userStore.IsFollower(comment.UserID, userID)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(http.StatusCreated).JSON(response.NewCommentResponse(&comment, isFollow))
 }
 
 func (h *Handler) DeleteComment(c *fiber.Ctx) error {
@@ -253,6 +236,14 @@ func (h *Handler) AllComments(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	isFollows := make([]bool, len(comments))
+	for i := range comments {
+		isFollow, err := h.userStore.IsFollower(comments[i].UserID, userID)
+		if err != nil {
+			return err
+		}
+		isFollows[i] = isFollow
+	}
 
-	return c.Status(http.StatusOK).JSON(response.NewMultipleCommentResponse(comments, h.userStore, userID))
+	return c.Status(http.StatusOK).JSON(response.NewMultipleCommentResponse(comments, isFollows))
 }

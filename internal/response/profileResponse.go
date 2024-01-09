@@ -2,7 +2,6 @@ package response
 
 import (
 	"awesomeProject/internal/model"
-	"awesomeProject/internal/user"
 )
 
 type ProfileResponse struct {
@@ -16,15 +15,15 @@ type Profile struct {
 	Following bool    `json:"following"`
 }
 
-func NewProfileResponse(u *model.User, us user.Store, userID uint) *ProfileResponse {
+func NewProfileResponse(u *model.User, isFollower bool) *ProfileResponse {
 	r := new(ProfileResponse)
-	r.Profile = NewProfile(u, us, userID)
+	r.Profile = NewProfile(u, isFollower)
 	return r
 }
 
-func NewProfile(u *model.User, us user.Store, userID uint) *Profile {
+func NewProfile(u *model.User, isFollower bool) *Profile {
 	p := new(Profile)
-	p.Following, _ = us.IsFollower(u.ID, userID)
+	p.Following = isFollower
 	p.Bio = u.Bio
 	p.Username = u.Username
 	p.Image = u.Image

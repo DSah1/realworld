@@ -15,16 +15,18 @@ type CreateArticleRequest struct {
 	} `json:"article"`
 }
 
-func (r *CreateArticleRequest) Bind(c *fiber.Ctx, a *model.Article, u *model.User) error {
+func (r *CreateArticleRequest) ParseArticle(c *fiber.Ctx) error {
 	if err := c.BodyParser(r); err != nil {
 		return err
 	}
+	return nil
+}
 
+func (r *CreateArticleRequest) Bind(a *model.Article, uid uint) {
 	a.Title = r.Article.Title
 	a.Slug = slug.Make(r.Article.Title)
 	a.Description = r.Article.Description
-	a.Author = *u
-	a.AuthorID = u.ID
+	a.AuthorID = uid
 
 	if r.Article.TagList != nil {
 		for _, tag := range r.Article.TagList {
@@ -32,5 +34,4 @@ func (r *CreateArticleRequest) Bind(c *fiber.Ctx, a *model.Article, u *model.Use
 		}
 	}
 
-	return nil
 }

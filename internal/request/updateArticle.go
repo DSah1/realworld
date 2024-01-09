@@ -22,21 +22,27 @@ func (u *UpdateArticleRequest) Populate(a *model.Article) {
 	u.Article.TagList = a.ExtractTags()
 }
 
-func (u *UpdateArticleRequest) Bind(c *fiber.Ctx, a *model.Article) error {
+func (u *UpdateArticleRequest) ParseArticle(c *fiber.Ctx) error {
 	if err := c.BodyParser(u); err != nil {
 		return err
 	}
+	return nil
+}
 
-	a.Title = u.Article.Title
-	a.Slug = slug.Make(u.Article.Title)
-	a.Description = u.Article.Description
-	a.Body = u.Article.Body
-	a.Tags = []model.Tag{}
-	if u.Article.TagList != nil {
-		for _, tag := range u.Article.TagList {
-			a.Tags = append(a.Tags, model.Tag{Tag: tag})
-		}
+func (u *UpdateArticleRequest) Bind(a *model.Article) error {
+	if u.Article.Title != "" {
+		a.Title = u.Article.Title
+		a.Slug = slug.Make(u.Article.Title)
 	}
 
+	updateIfNotEmpty(&a.Title, u.Article.Title)
+	updateIfNotEmpty(&a.Body, u.Article.Body)
+
+	if u.Article.TagList != nil {
+		a.Tags = make([]model.Tag, len(u.Article.TagList))
+		for i := range u.Article.TagList {
+			a.Tags[i] = model.Tag{Tag: u.Article.TagList[i]}
+		}
+	}
 	return nil
 }

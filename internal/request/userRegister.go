@@ -1,7 +1,6 @@
 package request
 
 import (
-	"awesomeProject/internal/model"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -13,13 +12,9 @@ type UserRegisterRequest struct {
 	} `json:"user"`
 }
 
-func (r *UserRegisterRequest) Bind(c *fiber.Ctx, u *model.User) error {
+func (r *UserRegisterRequest) Bind(c *fiber.Ctx) error {
 	if err := c.BodyParser(r); err != nil {
 		return err
 	}
-
-	u.Username = r.User.Username
-	u.Email = r.User.Email
-
 	return nil
 }
