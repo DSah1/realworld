@@ -119,33 +119,138 @@ func (as *ArticleService) UpdateArticle(slug string, userId uint, req *request.U
 }
 
 func (as *ArticleService) DeleteArticle(slug string, userId uint) (*response.SingleArticle, error) {
-	//TODO implement me
-	panic("implement me")
+	a, err := as.articleStore.GetBySlug(slug)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if userId != a.AuthorID {
+		return nil, errors.New("only creators can delete their article")
+	}
+
+	if err := as.articleStore.Delete(a); err != nil {
+		return nil, err
+	}
+
+	isFollower, err := as.userStore.IsFollower(a.AuthorID, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	inFavorites := as.articleStore.IsUserInFavorites(a.ID, userId)
+
+	return response.NewArticleResponse(a, isFollower, inFavorites), nil
 }
 
 func (as *ArticleService) FavoriteArticle(slug string, userId uint) (*response.SingleArticle, error) {
-	//TODO implement me
-	panic("implement me")
+	a, err := as.articleStore.GetBySlug(slug)
+
+	if err != nil {
+		return nil, err
+	}
+	isFollower, err := as.userStore.IsFollower(a.AuthorID, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if as.articleStore.IsUserInFavorites(a.ID, userId) {
+		return response.NewArticleResponse(a, isFollower, true), nil
+	}
+
+	if err := as.articleStore.AddFavorite(a, userId); err != nil {
+		return nil, err
+	}
+
+	return response.NewArticleResponse(a, isFollower, true), nil
 }
 
 func (as *ArticleService) UnfavoriteArticle(slug string, userId uint) (*response.SingleArticle, error) {
-	//TODO implement me
-	panic("implement me")
+	a, err := as.articleStore.GetBySlug(slug)
+
+	if err != nil {
+		return nil, err
+	}
+	isFollower, err := as.userStore.IsFollower(a.AuthorID, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if !as.articleStore.IsUserInFavorites(a.ID, userId) {
+		return response.NewArticleResponse(a, isFollower, false), nil
+	}
+
+	if err := as.articleStore.RemoveFavorite(a, userId); err != nil {
+		return nil, err
+	}
+	return response.NewArticleResponse(a, isFollower, false), nil
 }
 
-func (as *ArticleService) CommentArticle(slug string, userId uint) (*response.SingleComment, error) {
-	//TODO implement me
-	panic("implement me")
+func (as *ArticleService) CommentArticle(slug string, userId uint, commentReq *request.CreateCommentRequest) (*response.SingleComment, error) {
+	a, err := as.articleStore.GetBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	comment := new(model.Comment)
+	if err := commentReq.Bind(comment, userId, a); err != nil {
+		return nil, err
+	}
+
+	if err := as.articleStore.CreateComment(comment); err != nil {
+		return nil, err
+	}
+
+	isFollow, err := as.userStore.IsFollower(comment.UserID, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.NewCommentResponse(comment, isFollow), nil
 }
 
-func (as *ArticleService) DeleteComment(slug string, userId uint) (*response.SingleComment, error) {
-	//TODO implement me
-	panic("implement me")
+func (as *ArticleService) DeleteComment(slug string, userId, commentId uint) error {
+	a, err := as.articleStore.GetBySlug(slug)
+
+	if err != nil {
+		return err
+	}
+	comment, err := as.articleStore.GetCommentByID(commentId)
+
+	if comment.UserID != userId {
+		return errors.New("you cannot delete comments that were not made by you")
+	}
+
+	if comment.ArticleID != a.ID {
+		return errors.New("this comment is not related to slug")
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := as.articleStore.DeleteComment(comment); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (as *ArticleService) AllComments(slug string, userId uint) (*response.MultipleComments, error) {
-	//TODO implement me
-	panic("implement me")
+	comments, err := as.articleStore.GetCommentsForArticle(slug)
+
+	if err != nil {
+		return nil, err
+	}
+	isFollows := make([]bool, len(comments))
+	for i := range comments {
+		isFollow, err := as.userStore.IsFollower(comments[i].UserID, userId)
+		if err != nil {
+			return nil, err
+		}
+		isFollows[i] = isFollow
+	}
+
+	return response.NewMultipleCommentResponse(comments, isFollows), nil
 }
 
 func (as *ArticleService) getBooleans(articles []model.Article, userId uint) (isFollowers, inFavorites []bool) {

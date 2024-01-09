@@ -35,7 +35,7 @@ type Service interface {
 	FavoriteArticle(slug string, userId uint) (*response.SingleArticle, error)
 	UnfavoriteArticle(slug string, userId uint) (*response.SingleArticle, error)
 
-	CommentArticle(slug string, userId uint) (*response.SingleComment, error)
-	DeleteComment(slug string, userId uint) (*response.SingleComment, error)
+	CommentArticle(slug string, userId uint, createReq *request.CreateCommentRequest) (*response.SingleComment, error)
+	DeleteComment(slug string, userId, commentId uint) error
 	AllComments(slug string, userId uint) (*response.MultipleComments, error)
 }

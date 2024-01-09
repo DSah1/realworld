@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"awesomeProject/internal/model"
 	"awesomeProject/internal/request"
-	"awesomeProject/internal/response"
 	"awesomeProject/utils"
 	"errors"
 	"github.com/gofiber/fiber/v2"
@@ -99,151 +97,77 @@ func (h *Handler) DeleteArticle(c *fiber.Ctx) error {
 	slug := c.Params("slug")
 	userID := getUserIDByToken(c)
 
-	article, err := h.articleStore.GetBySlug(slug)
-
+	resp, err := h.articleService.DeleteArticle(slug, userID)
 	if err != nil {
 		return err
 	}
 
-	if userID != article.AuthorID {
-		return c.SendStatus(http.StatusUnauthorized)
-	}
-
-	if err := h.articleStore.Delete(article); err != nil {
-		return err
-	}
-
-	isFollower, err := h.userStore.IsFollower(article.AuthorID, userID)
-	if err != nil {
-		return err
-	}
-
-	inFavorites := h.articleStore.IsUserInFavorites(article.ID, userID)
-
-	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, inFavorites))
+	return c.Status(http.StatusOK).JSON(resp)
 }
 
 func (h *Handler) FavoriteArticle(c *fiber.Ctx) error {
 	userID := getUserIDByToken(c)
-	article, err := h.articleStore.GetBySlug(c.Params("slug"))
+	slug := c.Params("slug")
+
+	resp, err := h.articleService.FavoriteArticle(slug, userID)
 
 	if err != nil {
 		return err
 	}
-	isFollower, err := h.userStore.IsFollower(article.AuthorID, userID)
-	if err != nil {
-		return err
-	}
 
-	if h.articleStore.IsUserInFavorites(article.ID, userID) {
-		return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, true))
-	}
-
-	if err := h.articleStore.AddFavorite(article, userID); err != nil {
-		return err
-	}
-
-	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, true))
+	return c.Status(http.StatusOK).JSON(resp)
 }
 
 func (h *Handler) UnfavoriteArticle(c *fiber.Ctx) error {
 	userID := getUserIDByToken(c)
-	article, err := h.articleStore.GetBySlug(c.Params("slug"))
+	slug := c.Params("slug")
 
+	resp, err := h.articleService.UnfavoriteArticle(slug, userID)
 	if err != nil {
 		return err
 	}
-	isFollower, err := h.userStore.IsFollower(article.AuthorID, userID)
-	if err != nil {
-		return err
-	}
-
-	if !h.articleStore.IsUserInFavorites(article.ID, userID) {
-		return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, false))
-	}
-
-	if err := h.articleStore.RemoveFavorite(article, userID); err != nil {
-		return err
-	}
-
-	return c.Status(http.StatusOK).JSON(response.NewArticleResponse(article, isFollower, false))
+	return c.Status(http.StatusOK).JSON(resp)
 }
 
 func (h *Handler) Comment(c *fiber.Ctx) error {
 	userID := getUserIDByToken(c)
-	article, err := h.articleStore.GetBySlug(c.Params("slug"))
-
-	if err != nil {
-		return err
-	}
+	slug := c.Params("slug")
 
 	req := request.CreateCommentRequest{}
-	comment := model.Comment{}
 
-	if err := req.Bind(c, &comment, userID, article); err != nil {
+	if err := req.ParseBody(c); err != nil {
 		return err
 	}
-
-	if err := h.articleStore.CreateComment(&comment); err != nil {
-		return err
-	}
-
-	isFollow, err := h.userStore.IsFollower(comment.UserID, userID)
+	resp, err := h.articleService.CommentArticle(slug, userID, &req)
 	if err != nil {
 		return err
 	}
 
-	return c.Status(http.StatusCreated).JSON(response.NewCommentResponse(&comment, isFollow))
+	return c.Status(http.StatusCreated).JSON(resp)
 }
 
 func (h *Handler) DeleteComment(c *fiber.Ctx) error {
 	userID := getUserIDByToken(c)
-	article, err := h.articleStore.GetBySlug(c.Params("slug"))
-
+	slug := c.Params("slug")
+	commentId, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return err
 	}
-
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
+	if err := h.articleService.DeleteComment(slug, userID, uint(commentId)); err != nil {
 		return err
 	}
 
-	comment, err := h.articleStore.GetCommentByID(uint(id))
-
-	if comment.UserID != userID {
-		return c.Status(http.StatusForbidden).SendString("You cannot delete comments that were not made by you")
-	}
-
-	if comment.ArticleID != article.ID {
-		return c.Status(http.StatusForbidden).SendString("This comment is not related to slug")
-	}
-
-	if err != nil {
-		return err
-	}
-
-	if err := h.articleStore.DeleteComment(comment); err != nil {
-		return err
-	}
 	return c.SendStatus(http.StatusOK)
 }
 
 func (h *Handler) AllComments(c *fiber.Ctx) error {
 	userID := getUserIDByToken(c)
-	comments, err := h.articleStore.GetCommentsForArticle(c.Params("slug"))
+	slug := c.Params("slug")
 
+	resp, err := h.articleService.AllComments(slug, userID)
 	if err != nil {
 		return err
 	}
-	isFollows := make([]bool, len(comments))
-	for i := range comments {
-		isFollow, err := h.userStore.IsFollower(comments[i].UserID, userID)
-		if err != nil {
-			return err
-		}
-		isFollows[i] = isFollow
-	}
 
-	return c.Status(http.StatusOK).JSON(response.NewMultipleCommentResponse(comments, isFollows))
+	return c.Status(http.StatusOK).JSON(resp)
 }

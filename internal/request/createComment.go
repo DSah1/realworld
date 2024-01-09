@@ -11,10 +11,14 @@ type CreateCommentRequest struct {
 	} `json:"comment"`
 }
 
-func (r *CreateCommentRequest) Bind(c *fiber.Ctx, comment *model.Comment, userID uint, article *model.Article) error {
+func (r *CreateCommentRequest) ParseBody(c *fiber.Ctx) error {
 	if err := c.BodyParser(r); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *CreateCommentRequest) Bind(comment *model.Comment, userID uint, article *model.Article) error {
 
 	comment.Body = r.Comment.Body
 	comment.UserID = userID
