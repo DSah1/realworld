@@ -253,6 +253,10 @@ func (as *ArticleService) AllComments(slug string, userId uint) (*response.Multi
 	return response.NewMultipleCommentResponse(comments, isFollows), nil
 }
 
+func (as *ArticleService) GetTags() *response.TagsResponse {
+	return response.NewTagsResponse(as.articleStore.GetTags())
+}
+
 func (as *ArticleService) getBooleans(articles []model.Article, userId uint) (isFollowers, inFavorites []bool) {
 	isFollowers = make([]bool, len(articles))
 	inFavorites = make([]bool, len(articles))

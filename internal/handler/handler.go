@@ -10,19 +10,12 @@ type Handler struct {
 	userService    user.Service
 	profileService profile.Service
 	articleService article.Service
-
-	//DEPRECATED
-	userStore user.Store
-	//DEPRECATED
-	articleStore article.Store
 }
 
-func NewHandler(us user.Service, ps profile.Service, as article.Service, uStore user.Store, aStore article.Store) *Handler {
+func NewHandler(us user.Service, ps profile.Service, as article.Service) *Handler {
 	return &Handler{
 		userService:    us,
 		profileService: ps,
 		articleService: as,
-		userStore:      uStore,
-		articleStore:   aStore,
 	}
 }

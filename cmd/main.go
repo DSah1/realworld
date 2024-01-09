@@ -24,7 +24,7 @@ func main() {
 	aService := service.NewArticleService(us, as)
 	pService := service.NewProfileService(us)
 
-	h := handler.NewHandler(uService, pService, aService, us, as)
+	h := handler.NewHandler(uService, pService, aService)
 	h.RegisterRoutes(app)
 
 	log.Fatal(app.Listen(":3000"))

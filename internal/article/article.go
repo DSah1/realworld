@@ -38,4 +38,6 @@ type Service interface {
 	CommentArticle(slug string, userId uint, createReq *request.CreateCommentRequest) (*response.SingleComment, error)
 	DeleteComment(slug string, userId, commentId uint) error
 	AllComments(slug string, userId uint) (*response.MultipleComments, error)
+
+	GetTags() *response.TagsResponse
 }
